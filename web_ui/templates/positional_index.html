@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Positional Index{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div>
+    <p class="eyebrow">INVERTED LOOKUP</p>
+    <h1 class="page-title">Positional index</h1>
+    <p class="muted">Every term mapped to the documents and exact token positions where it appears.</p>
+  </div>
+  <label class="search-box">
+    {{ icon('search', 18) }}
+    <input type="text" id="term-filter" placeholder="Filter terms..." autocomplete="off">
+  </label>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Index entries</h2>
+      <small><span id="term-count">{{ rows|length }}</span> of {{ rows|length }} terms</small>
+    </div>
+    <span class="legend"><span class="dot"></span>Position</span>
+  </div>
+
+  <table class="doc-table index-table">
+    <thead>
+      <tr><th>TERM</th><th>DOCUMENT IDS &amp; 1-BASED POSITIONS</th><th>DF</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="index-row" data-term="{{ r.term }}">
+        <td class="term-cell">{{ r.term }}</td>
+        <td>
+          <div class="postings">
+            {% for p in r.postings %}
+            <span class="posting">
+              <b>{{ p.doc }}</b><i>:</i>
+              {% for pos in p.positions %}<span class="pos">{{ pos }}</span>{% endfor %}
+            </span>
+            {% endfor %}
+          </div>
+        </td>
+        <td class="df-cell"><span class="df-circle">{{ r.df }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

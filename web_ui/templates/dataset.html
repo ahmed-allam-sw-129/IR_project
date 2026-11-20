@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Dataset{% endblock %}
+
+{% block content %}
+<p class="eyebrow">SOURCE MATERIAL</p>
+<h1 class="page-title">Healthcare dataset</h1>
+<p class="muted">Ten short documents form the corpus. Select any row to inspect its exact 1-based token positions.</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-icon">{{ icon('file', 22) }}</div><div><b>{{ stats.documents }}</b><span>Documents</span></div></div>
+  <div class="stat-card"><div class="stat-icon">{{ icon('layers', 22) }}</div><div><b>{{ stats.unique_terms }}</b><span>Unique terms</span></div></div>
+  <div class="stat-card"><div class="stat-icon">{{ icon('text', 22) }}</div><div><b>{{ stats.total_tokens }}</b><span>Total tokens</span></div></div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Document corpus</h2>
+      <small>Exact text, lowercased and tokenized by whitespace</small>
+    </div>
+    <span class="pill">Healthcare</span>
+  </div>
+
+  <table class="doc-table">
+    <thead>
+      <tr><th>DOCUMENT ID</th><th>EXACT DOCUMENT TEXT</th><th>WORD COUNT</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for d in documents %}
+      <tr class="doc-row" data-target="detail-{{ d.id }}">
+        <td><span class="badge">{{ d.id }}</span></td>
+        <td>{{ d.text }}</td>
+        <td class="muted">{{ d.word_count }} words</td>
+        <td class="chev">{{ icon('chevron', 18) }}</td>
+      </tr>
+      <tr class="detail-row" id="detail-{{ d.id }}" hidden>
+        <td colspan="4">
+          <div class="token-list">
+            {% for pos, tok in d.tokens %}
+            <span class="token"><small>{{ pos }}</small>{{ tok }}</span>
+            {% endfor %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

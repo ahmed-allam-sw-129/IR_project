@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Overview{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">{{ icon('spark', 14) }} INFORMATION RETRIEVAL, VISUALIZED</p>
+    <h1>From raw text to <span class="accent">ranked results.</span></h1>
+    <p class="lead">Explore how a search engine transforms ten healthcare documents into a positional index, weighs every term, and ranks exact phrase matches.</p>
+    <div class="hero-buttons">
+      <a class="btn btn-primary" href="#">Try search {{ icon('chevron', 16) }}</a>
+      <a class="btn btn-light" href="{{ url_for('dataset') }}">Explore dataset</a>
+    </div>
+  </div>
+
+  <!-- decorative preview card -->
+  <div class="hero-visual">
+    <span class="float-tag tag-top">cosine = 1.00</span>
+    <div class="preview">
+      <div class="preview-search">{{ icon('search', 16) }} <span>patient care</span></div>
+      <div class="preview-row"><span class="rank">01</span><b>d1</b><div class="bar"><i style="width:100%"></i></div><em>1.0000</em></div>
+      <div class="preview-row"><span class="rank">02</span><b>d5</b><div class="bar"><i style="width:54.7%"></i></div><em>0.5473</em></div>
+      <div class="preview-row"><span class="rank">03</span><b>d6</b><div class="bar"><i style="width:22.5%"></i></div><em>0.2253</em></div>
+      <div class="preview-foot"><span><i class="dot"></i> Positional phrase match</span><span>3 documents</span></div>
+    </div>
+    <span class="float-tag tag-bottom">2 terms</span>
+  </div>
+</section>
+{% endblock %}

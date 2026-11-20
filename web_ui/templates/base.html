@@ -1,0 +1,67 @@
+{% from "_icons.html" import icon %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MediSearch IR - {% block title %}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    // apply the saved theme before the page paints (no flash)
+    if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+  </script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="8" width="3.5" height="8" rx="1.5"/><rect x="10.2" y="3" width="3.5" height="18" rx="1.5"/><rect x="17.5" y="8" width="3.5" height="8" rx="1.5"/></svg>
+      </div>
+      <span class="brand-name">MediSearch <b>IR</b></span>
+    </div>
+
+    <nav>
+      <p class="nav-label">WORKSPACE</p>
+      <a class="nav-item {{ 'active' if page == 'overview' }}" href="{{ url_for('overview') }}">{{ icon('home') }}<span>Overview</span></a>
+      <a class="nav-item {{ 'active' if page == 'dataset' }}" href="{{ url_for('dataset') }}">{{ icon('database') }}<span>Dataset</span></a>
+      <a class="nav-item" href="#">{{ icon('list') }}<span>Positional Index</span></a>
+      <a class="nav-item" href="#">{{ icon('grid') }}<span>Term Analysis</span></a>
+
+      <p class="nav-label">EXPLORE</p>
+      <a class="nav-item" href="#">{{ icon('search') }}<span>Search &amp; Ranking</span></a>
+      <a class="nav-item" href="#">{{ icon('boolean') }}<span>Boolean Logic</span></a>
+      <a class="nav-item" href="#">{{ icon('message') }}<span>Documentation</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="status-card">
+        <span class="dot"></span>
+        <div>
+          <strong>Corpus ready</strong>
+          <small>Indexed {{ stats.documents }} documents</small>
+        </div>
+      </div>
+      <div class="sidebar-foot"><span>IR Project</span><span>v1.0</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><span>MEDISEARCH IR</span><strong>{{ self.title() }}</strong></div>
+      <div class="top-actions">
+        <span class="pill">Healthcare · {{ stats.documents }} docs</span>
+        <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">{{ icon('moon', 18) }}</button>
+        <div class="avatar">IR</div>
+      </div>
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

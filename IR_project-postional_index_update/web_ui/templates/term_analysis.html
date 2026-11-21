@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Term Analysis{% endblock %}
+
+{# One matrix table: key = which list to show, whole = show integers (raw TF) #}
+{% macro matrix(key, whole=False) %}
+{% set mx = namespace(v=0) %}
+{% for r in terms.rows %}{% for v in r[key] %}{% if v > mx.v %}{% set mx.v = v %}{% endif %}{% endfor %}{% endfor %}
+<div class="table-scroll">
+  <table class="doc-table matrix-table">
+    <thead>
+      <tr>
+        <th>TERM</th>
+        {% for d in terms.doc_ids %}<th>{{ d|upper }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in terms.rows %}
+      <tr>
+        <td class="term-cell">{{ r.term }}</td>
+        {% for v in r[key] %}
+        <td>
+          {% if v == 0 %}
+            <span class="cell zero">&ndash;</span>
+          {% else %}
+            {# level 1 (light) ... 4 (dark) depending on the size of the value #}
+            {% set level = 4 if v >= mx.v * 0.75 else (3 if v >= mx.v * 0.5 else (2 if v >= mx.v * 0.25 else 1)) %}
+            <span class="cell lvl{{ level }}">{% if whole %}{{ v }}{% else %}{{ '%.4f'|format(v) }}{% endif %}</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% block content %}
+<p class="eyebrow">VECTOR SPACE MODEL</p>
+<h1 class="page-title">Term analysis</h1>
+<p class="muted">Compare term statistics and see how weighting transforms the document vectors.</p>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="raw">Raw TF</button>
+  <button class="tab" data-tab="weighted">Weighted TF</button>
+  <button class="tab" data-tab="dfidf">DF / IDF</button>
+  <button class="tab" data-tab="tfidf">TF-IDF</button>
+  <button class="tab" data-tab="lengths">Vector lengths</button>
+  <button class="tab" data-tab="norm">Normalized</button>
+</div>
+
+<section class="card tab-panel" id="panel-raw">
+  <div class="card-head">
+    <div><h2>Raw TF matrix</h2><small>Number of times each term appears in each document</small></div>
+    <span class="pill">{{ terms.rows|length }} terms</span>
+  </div>
+  {{ matrix('raw', True) }}
+</section>
+
+<section class="card tab-panel" id="panel-weighted" hidden>
+  <div class="card-head">
+    <div><h2>Weighted TF matrix</h2><small>1 + log10(TF) when TF &gt; 0, otherwise 0</small></div>
+    <span class="pill">1 + log₁₀(TF)</span>
+  </div>
+  {{ matrix('weighted') }}
+</section>
+
+<section class="card tab-panel" id="panel-dfidf" hidden>
+  <div class="card-head">
+    <div><h2>DF / IDF statistics</h2><small>IDF = log10(N / DF), with N = {{ terms.doc_ids|length }}</small></div>
+    <span class="pill">log₁₀(N / DF)</span>
+  </div>
+  <table class="doc-table dfidf-table">
+    <thead><tr><th>TERM</th><th>DF</th><th>IDF</th></tr></thead>
+    <tbody>
+      {% for r in terms.rows %}
+      <tr>
+        <td class="term-cell">{{ r.term }}</td>
+        <td><span class="df-circle">{{ r.df }}</span></td>
+        <td class="mono">{{ '%.4f'|format(r.idf) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card tab-panel" id="panel-tfidf" hidden>
+  <div class="card-head">
+    <div><h2>TF-IDF matrix</h2><small>Weighted TF × IDF</small></div>
+    <span class="pill">w × idf</span>
+  </div>
+  {{ matrix('tfidf') }}
+</section>
+
+<section class="card tab-panel" id="panel-lengths" hidden>
+  <div class="card-head">
+    <div><h2>Document vector lengths</h2><small>Square root of the sum of squared TF-IDF values</small></div>
+    <span class="pill">√Σw²</span>
+  </div>
+  {% set longest = terms.lengths|map(attribute='length')|max %}
+  <table class="doc-table length-table">
+    <thead><tr><th>DOCUMENT</th><th>VECTOR LENGTH</th><th></th></tr></thead>
+    <tbody>
+      {% for l in terms.lengths %}
+      <tr>
+        <td><span class="badge">{{ l.doc }}</span></td>
+        <td class="mono">{{ '%.4f'|format(l.length) }}</td>
+        <td><div class="bar"><i style="width: {{ (l.length / longest * 100)|round(1) }}%"></i></div></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card tab-panel" id="panel-norm" hidden>
+  <div class="card-head">
+    <div><h2>Normalized TF-IDF matrix</h2><small>TF-IDF ÷ document vector length</small></div>
+    <span class="pill">w / |d|</span>
+  </div>
+  {{ matrix('norm') }}
+</section>
+{% endblock %}

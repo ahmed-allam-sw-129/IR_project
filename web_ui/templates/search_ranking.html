@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Search &amp; Ranking{% endblock %}
+
+{# Results of ONE phrase: matching documents, query vector, ranking #}
+{% macro result_block(r) %}
+<div class="result-block">
+  <h2 class="result-title">Results for <span>&ldquo;{{ r.phrase }}&rdquo;</span></h2>
+
+  {% if not r.phrase.strip() %}
+  <section class="card">
+    <div class="empty-state"><b>Empty phrase</b>Type a phrase above, or pick one of the quick phrases.</div>
+  </section>
+  {% elif not r.matches %}
+  <section class="card">
+    <div class="empty-state"><b>No matching documents</b>No document contains the exact phrase &ldquo;{{ r.phrase }}&rdquo; (the words must appear next to each other, in the same order).</div>
+  </section>
+  {% else %}
+  <div class="result-grid">
+    <!-- 1) matching documents -->
+    <section class="card">
+      <div class="card-head">
+        <div><h2>Matching documents</h2><small>Start positions and token ranges (1-based)</small></div>
+        <span class="pill">{{ r.matches|length }} docs</span>
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>DOCUMENT</th><th>START POSITIONS</th><th>TOKEN RANGES</th></tr></thead>
+        <tbody>
+          {% for m in r.matches %}
+          <tr>
+            <td><span class="badge">{{ m.doc }}</span></td>
+            <td>{% for s in m.starts %}<span class="pos">{{ s }}</span> {% endfor %}</td>
+            <td>{% for t in m.ranges %}<span class="range-tag">{{ t }}</span> {% endfor %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 2) query vector -->
+    <section class="card">
+      <div class="card-head">
+        <div><h2>Query vector</h2><small>Weighted with the collection IDF, then normalized</small></div>
+        <span class="pill">|q| = {{ '%.6f'|format(r.query.length) }}</span>
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>TERM</th><th>WEIGHTED TF</th><th>TF-IDF</th><th>NORMALIZED</th></tr></thead>
+        <tbody>
+          {% for q in r.query.rows %}
+          <tr>
+            <td class="term-cell">{{ q.term }}</td>
+            <td class="mono">{{ '%.4f'|format(q.weighted) }}</td>
+            <td class="mono">{{ '%.4f'|format(q.tfidf) }}</td>
+            <td class="mono">{{ '%.4f'|format(q.norm) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="qlen">Query vector length = &radic;&Sigma;(TF-IDF)&sup2; = <span class="mono">{{ '%.6f'|format(r.query.length) }}</span></p>
+    </section>
+  </div>
+
+  <!-- 3) similarity + ranking -->
+  <section class="card">
+    <div class="card-head">
+      <div><h2>Similarity &amp; ranking</h2><small>Dot product of the normalized query with each normalized document vector</small></div>
+      <span class="pill">Rank 1 = highest</span>
+    </div>
+    <table class="doc-table rank-table">
+      <thead><tr><th>RANK</th><th>DOCUMENT</th><th>SIMILARITY</th><th></th></tr></thead>
+      <tbody>
+        {% for s in r.ranking %}
+        <tr>
+          <td><span class="rank-no {{ 'first' if s.rank == 1 }}">{{ s.rank }}</span></td>
+          <td><span class="badge">{{ s.doc }}</span></td>
+          <td class="mono">{{ '%.4f'|format(s.score) }}</td>
+          <td><div class="bar"><i style="width: {{ (s.score * 100)|round(1) }}%"></i></div></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<p class="eyebrow">PHRASE RETRIEVAL</p>
+<h1 class="page-title">Search &amp; ranking</h1>
+<p class="muted">Find exact phrase matches with the positional index, then rank them by cosine similarity.</p>
+
+<form class="search-form" method="get" action="{{ url_for('search_ranking') }}">
+  <label class="search-box">
+    {{ icon('search', 18) }}
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="Type a phrase, e.g. patient care" autocomplete="off">
+  </label>
+  <button class="btn btn-primary" type="submit">Search</button>
+</form>
+
+<div class="quick">
+  <small>Quick phrases:</small>
+  {% for p in assigned %}
+  <a class="chip {{ 'active' if q == p }}" href="{{ url_for('search_ranking', q=p) }}">{{ p }}</a>
+  {% endfor %}
+  {% if q is not none %}<a class="chip" href="{{ url_for('search_ranking') }}">Show both</a>{% endif %}
+</div>
+
+{% for r in results %}
+{{ result_block(r) }}
+{% endfor %}
+{% endblock %}

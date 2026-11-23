@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Boolean Logic{% endblock %}
+
+{# Doc labels inside one Venn zone (max 6 shown) #}
+{% macro zone(docs, x, color, highlight) %}
+  {% set shown = docs[:6] %}
+  {% set top = 180 - (shown|length - 1) * 14 %}
+  {% for d in shown %}
+    <text x="{{ x }}" y="{{ top + loop.index0 * 28 + 5 }}" text-anchor="middle"
+          class="venn-doc {{ 'hl' if highlight }}" fill="{{ color }}">{{ d }}</text>
+  {% endfor %}
+  {% if docs|length > 6 %}
+    <text x="{{ x }}" y="{{ top + 6 * 28 }}" text-anchor="middle" class="venn-more">+{{ docs|length - 6 }} more</text>
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+<p class="eyebrow">SET OPERATIONS</p>
+<h1 class="page-title">Boolean logic</h1>
+<p class="muted">See how phrase-match sets combine through intersection and exclusion.</p>
+
+<form class="bool-form" method="get" action="{{ url_for('boolean_logic') }}">
+  <input type="hidden" name="op" value="{{ r.op }}">
+  <label>A <input type="text" name="a" value="{{ r.a }}" autocomplete="off"></label>
+  <label>B <input type="text" name="b" value="{{ r.b }}" autocomplete="off"></label>
+  <button class="btn btn-primary" type="submit">Apply</button>
+</form>
+
+<div class="tabs">
+  <a class="tab {{ 'active' if r.op == 'AND' }}" href="{{ url_for('boolean_logic', a=r.a, b=r.b, op='AND') }}">AND · Intersection</a>
+  <a class="tab {{ 'active' if r.op == 'AND NOT' }}" href="{{ url_for('boolean_logic', a=r.a, b=r.b, op='AND NOT') }}">AND NOT · Exclusion</a>
+</div>
+
+<div class="bool-grid">
+  <section class="card">
+    <div class="venn-labels">
+      <div><b>&ldquo;{{ r.a }}&rdquo;</b><small>{{ r.docs_a|length }} doc{{ '' if r.docs_a|length == 1 else 's' }}</small></div>
+      <div class="right"><b>&ldquo;{{ r.b }}&rdquo;</b><small>{{ r.docs_b|length }} doc{{ '' if r.docs_b|length == 1 else 's' }}</small></div>
+    </div>
+
+    <svg viewBox="0 0 600 360" class="venn" role="img" aria-label="Venn diagram">
+      <circle cx="220" cy="180" r="130" class="circ-a"/>
+      <circle cx="380" cy="180" r="130" class="circ-b"/>
+      {{ zone(r.only_a, 150, '#0f7f70', r.op == 'AND NOT') }}
+      {{ zone(r.both, 300, '#111827', r.op == 'AND') }}
+      {{ zone(r.only_b, 450, '#c2670a', false) }}
+    </svg>
+
+    <div class="venn-foot">
+      <span>{{ 'A ∩ B' if r.op == 'AND' else 'A − B' }}</span>
+      <b>{ {{ r.result|join(', ') }} }</b>
+    </div>
+  </section>
+
+  <div>
+    <span class="pill">{{ 'INTERSECTION' if r.op == 'AND' else 'EXCLUSION' }}</span>
+    <h2 class="bool-title">{{ r.a|capitalize }} {{ r.op }} {{ r.b }}</h2>
+    <p class="muted">
+      {% if r.op == 'AND' %}Keep only documents that contain both exact phrases.
+      {% else %}Keep documents that contain the first phrase but not the second.{% endif %}
+    </p>
+
+    <h3 class="bool-sub">MATCHING DOCUMENTS</h3>
+    {% for m in r.matching %}
+    <div class="bool-row">
+      <span class="muted">{{ '%02d'|format(m.rank) }}</span>
+      <span class="badge">{{ m.doc }}</span>
+      <span>{{ m.text }}</span>
+    </div>
+    {% else %}
+    <div class="empty-state"><b>No matching documents</b>The result set is empty for this dataset and these phrases.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+  .bool-form { display: flex; gap: 12px; align-items: center; margin: 20px 0; flex-wrap: wrap; }
+  .bool-form label { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+  .bool-form input[type=text] { padding: 10px 12px; border: 1px solid #d5dedb; border-radius: 10px;
+    font: inherit; background: transparent; color: inherit; }
+  .tabs a.tab { display: inline-block; text-decoration: none; }
+  .bool-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; margin-top: 20px; align-items: start; }
+  .venn-labels { display: flex; justify-content: space-between; padding: 0 12px; }
+  .venn-labels b { display: block; } .venn-labels small { opacity: .7; }
+  .venn-labels .right { text-align: right; }
+  .venn { width: 100%; height: auto; }
+  .circ-a { fill: #0f9d8a; fill-opacity: .15; stroke: #0f9d8a; stroke-opacity: .5; }
+  .circ-b { fill: #f59e0b; fill-opacity: .15; stroke: #f59e0b; stroke-opacity: .5; }
+  .venn-doc { font-size: 17px; font-weight: 600; opacity: .55; }
+  .venn-doc.hl { opacity: 1; font-weight: 800; font-size: 20px; }
+  .venn-more { font-size: 13px; opacity: .6; fill: currentColor; }
+  .venn-foot { display: flex; justify-content: space-between; padding: 12px; border-top: 1px solid #d5dedb; margin-top: 8px; }
+  .bool-title { margin: 14px 0 6px; }
+  .bool-sub { margin-top: 24px; font-size: 12px; letter-spacing: .1em; color: #0f7f70; }
+  .bool-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #d5dedb; }
+  @media (max-width: 1000px) { .bool-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

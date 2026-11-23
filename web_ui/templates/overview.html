@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Overview{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">{{ icon('spark', 14) }} INFORMATION RETRIEVAL, VISUALIZED</p>
+    <h1>From raw text to <span class="accent">ranked results.</span></h1>
+    <p class="lead">Explore how a search engine transforms {{ stats.documents }} document{{ '' if stats.documents == 1 else 's' }} from <b>{{ dataset_name }}</b> into a positional index, weighs every term, and ranks exact phrase matches.</p>
+    <div class="hero-buttons">
+      <a class="btn btn-primary" href="{{ url_for('search_ranking') }}">Try search {{ icon('chevron', 16) }}</a>
+      <a class="btn btn-light" href="{{ url_for('dataset') }}">Explore dataset</a>
+    </div>
+  </div>
+
+  <!-- live preview: real result of one phrase on the loaded dataset -->
+  <div class="hero-visual">
+    {% if preview.rows %}
+    <span class="float-tag tag-top">cosine = {{ '%.2f'|format(preview.rows[0].score) }}</span>
+    {% endif %}
+    <div class="preview">
+      <div class="preview-search">{{ icon('search', 16) }} <span>{{ preview.phrase }}</span></div>
+      {% for r in preview.rows %}
+      <div class="preview-row">
+        <span class="rank">{{ '%02d'|format(r.rank) }}</span>
+        <b>{{ r.doc }}</b>
+        <div class="bar"><i style="width:{{ '%.1f'|format(r.score * 100) }}%"></i></div>
+        <em>{{ '%.4f'|format(r.score) }}</em>
+      </div>
+      {% else %}
+      <div class="preview-row"><span class="muted">No documents match this phrase.</span></div>
+      {% endfor %}
+      <div class="preview-foot">
+        <span><i class="dot"></i> Positional phrase match</span>
+        <span>{{ preview.total }} document{{ '' if preview.total == 1 else 's' }}</span>
+      </div>
+    </div>
+    <span class="float-tag tag-bottom">{{ preview.terms }} term{{ '' if preview.terms == 1 else 's' }}</span>
+  </div>
+</section>
+{% endblock %}

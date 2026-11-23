@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Dataset{% endblock %}
+
+{% block content %}
+{# folder or file name taken from the path, e.g. C:\data\reviews -> reviews #}
+{% set dataset_name = path.replace('\\', '/').rstrip('/').split('/')[-1] %}
+
+<p class="eyebrow">SOURCE MATERIAL</p>
+<h1 class="page-title">Dataset: {{ dataset_name }}</h1>
+<p class="muted">
+  {{ stats.documents }} document{{ '' if stats.documents == 1 else 's' }} form the corpus.
+  Select any row to inspect its exact 1-based token positions.
+</p>
+
+<section class="card load-card">
+  <div class="card-head">
+    <div>
+      <h2>Load a dataset</h2>
+    <small>Enter a folder or a single file. Supported: .txt .md .log .pdf .docx .csv .tsv .json .jsonl</small>
+    </div>
+  </div>
+
+  <form id="load-form" class="load-form" method="post" action="{{ url_for('load_path') }}">
+    <input
+      type="text"
+      name="path"
+      class="path-input"
+      placeholder="C:\Programming\my_docs   or   docs"
+      value="{{ path }}"
+      required
+    >
+    <button type="submit" id="load-btn" class="btn-load">Load</button>
+  </form>
+
+  {% if error %}
+  <p class="load-error">{{ error }}</p>
+  {% endif %}
+
+  <p class="muted load-current">Currently loaded: <code>{{ path }}</code></p>
+</section>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-icon">{{ icon('file', 22) }}</div><div><b>{{ stats.documents }}</b><span>Documents</span></div></div>
+  <div class="stat-card"><div class="stat-icon">{{ icon('layers', 22) }}</div><div><b>{{ stats.unique_terms }}</b><span>Unique terms</span></div></div>
+  <div class="stat-card"><div class="stat-icon">{{ icon('text', 22) }}</div><div><b>{{ stats.total_tokens }}</b><span>Total tokens</span></div></div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Document corpus</h2>
+      <small>Exact text, lowercased and tokenized by whitespace</small>
+    </div>
+    <span class="pill">{{ dataset_name }}</span>
+  </div>
+
+  <table class="doc-table">
+    <thead>
+      <tr><th>DOCUMENT ID</th><th>EXACT DOCUMENT TEXT</th><th>WORD COUNT</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for d in documents %}
+      <tr class="doc-row" data-target="detail-{{ d.id }}">
+        <td><span class="badge">{{ d.id }}</span></td>
+        <td>{{ d.text }}</td>
+        <td class="muted">{{ d.word_count }} words</td>
+        <td class="chev">{{ icon('chevron', 18) }}</td>
+      </tr>
+      <tr class="detail-row" id="detail-{{ d.id }}" hidden>
+        <td colspan="4">
+          <div class="token-list">
+            {% for pos, tok in d.tokens %}
+            <span class="token"><small>{{ pos }}</small>{{ tok }}</span>
+            {% endfor %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<style>
+  .load-card { margin-bottom: 24px; }
+  .load-form { display: flex; gap: 12px; margin-top: 16px; }
+  .path-input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid #d5dedb;
+    border-radius: 10px;
+    font: inherit;
+    background: transparent;
+    color: inherit;
+  }
+  .path-input:focus { outline: 2px solid #0f9d8a; border-color: transparent; }
+  .btn-load {
+    padding: 12px 28px;
+    border: 0;
+    border-radius: 10px;
+    background: #0f7f70;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-load:disabled { opacity: .6; cursor: wait; }
+  .load-error {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fdecea;
+    color: #b42318;
+    font-size: 14px;
+  }
+  .load-current { margin-top: 12px; font-size: 13px; }
+</style>
+
+<script>
+  // Spark takes a few seconds to index, so show feedback instead of a frozen page.
+  document.getElementById("load-form").addEventListener("submit", function () {
+    var btn = document.getElementById("load-btn");
+    btn.disabled = true;
+    btn.textContent = "Indexing...";
+  });
+</script>
+{% endblock %}
